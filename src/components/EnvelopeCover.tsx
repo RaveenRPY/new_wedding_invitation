@@ -4,6 +4,7 @@ import { invitation } from '../data'
 type Props = {
   onOpen: () => void
   onOpenStart?: () => void
+  guestName?: string
 }
 
 type Phase = 'idle' | 'opening' | 'away' | 'done'
@@ -165,7 +166,7 @@ function AmbientPetals() {
   )
 }
 
-export function EnvelopeCover({ onOpen, onOpenStart }: Props) {
+export function EnvelopeCover({ onOpen, onOpenStart, guestName = invitation.guestName }: Props) {
   const [phase, setPhase] = useState<Phase>('idle')
   const [particles, setParticles] = useState<Particle[]>([])
   const openedRef = useRef(false)
@@ -255,32 +256,43 @@ export function EnvelopeCover({ onOpen, onOpenStart }: Props) {
         bottom: 0,
       }}
     >
-      <div aria-hidden className="pointer-events-none absolute" style={{ inset: '-20vmax', background: GRADIENT }} />
-
-      {/* Intro video as envelope background */}
+      {/* Solid blue fills past the viewport so no edge gaps */}
       <div
-        className="pointer-events-none absolute z-[1] overflow-hidden envelope-fade-in"
-        style={{ inset: '-20vmax' }}
-      >
-        <video
-          ref={bgVideoRef}
-          className="h-full w-full object-cover"
-          src="/videos/intro.webm"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-        />
+        aria-hidden
+        className="pointer-events-none absolute z-0"
+        style={{ inset: '-20vmax', background: GRADIENT }}
+      />
+
+      {/* Intro video — clipped to screen; inner layer oversized so blur has no fringe */}
+      <div className="pointer-events-none absolute inset-0 z-[1] overflow-hidden envelope-fade-in">
+        <div
+          className="absolute"
+          style={{
+            inset: '-64px',
+            filter: 'blur(14px)',
+            transform: 'translateZ(0)',
+          }}
+        >
+          <video
+            ref={bgVideoRef}
+            className="h-full w-full object-cover"
+            src="/videos/intro.webm"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+          />
+        </div>
       </div>
 
-      {/* Full-screen navy blue opacity wash */}
+      {/* Navy wash over video — also extended past viewport */}
       <div
         aria-hidden
         className="pointer-events-none absolute z-[2] envelope-fade-in"
         style={{
           inset: '-20vmax',
-          background: 'rgba(0, 34, 76, 0.72)',
+          background: 'rgba(0, 34, 76, 0.85)',
           animationDelay: '0.08s',
         }}
       />
@@ -453,7 +465,7 @@ export function EnvelopeCover({ onOpen, onOpenStart }: Props) {
                 className="text-[17px] font-medium"
                 style={{ color: '#00224c', fontFamily: 'Lora, "Times New Roman", serif' }}
               >
-                {invitation.guestName}
+                {guestName}
               </h2>
             </div>
 

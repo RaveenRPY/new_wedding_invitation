@@ -4,6 +4,7 @@ import { INTRO_CROSSFADE_MS, IntroVideo } from './components/IntroVideo'
 import { Invitation } from './components/Invitation'
 import { MusicButton } from './components/MusicButton'
 import { invitation } from './data'
+import { guestNameFromUrl } from './guestName'
 import { useAutoScroll } from './hooks/useAutoScroll'
 
 type Stage = 'cover' | 'video' | 'invite'
@@ -34,6 +35,7 @@ export default function App() {
     return params.get('open') === '1'
   })
   const [ambienceReady, setAmbienceReady] = useState(false)
+  const [guestName] = useState(() => guestNameFromUrl(invitation.guestName))
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const musicStartedRef = useRef(false)
 
@@ -145,10 +147,10 @@ export default function App() {
           transitionDuration: `${INTRO_CROSSFADE_MS}ms`,
         }}
       >
-        <Invitation introActive={inviteVisible} />
+        <Invitation introActive={inviteVisible} guestName={guestName} />
       </main>
 
-      {showCover && <EnvelopeCover onOpen={onEnvelopeOpened} />}
+      {showCover && <EnvelopeCover onOpen={onEnvelopeOpened} guestName={guestName} />}
       {showVideo && <IntroVideo onRevealStart={onVideoRevealStart} onComplete={onVideoComplete} />}
       {inviteVisible && !showCover && <MusicButton playing={playing} onToggle={toggleMusic} />}
     </div>

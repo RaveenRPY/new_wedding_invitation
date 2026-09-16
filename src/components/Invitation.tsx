@@ -100,14 +100,20 @@ function Calendar() {
   )
 }
 
-export function Invitation({ introActive = false }: { introActive?: boolean }) {
+export function Invitation({
+  introActive = false,
+  guestName = invitation.guestName,
+}: {
+  introActive?: boolean
+  guestName?: string
+}) {
   const countdown = useCountdown(invitation.weddingDate)
   const { wishes, addWish } = useWishes()
   const { submitted, submit } = useRsvp()
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null)
   const [guestCount, setGuestCount] = useState(1)
   const [rsvpMessage, setRsvpMessage] = useState('')
-  const [wishName, setWishName] = useState('Hubby')
+  const [wishName, setWishName] = useState(guestName)
   const [wishMessage, setWishMessage] = useState('')
   const [heroSettled, setHeroSettled] = useState(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -134,7 +140,7 @@ export function Invitation({ introActive = false }: { introActive?: boolean }) {
     e.preventDefault()
     if (!attending || submitted) return
     submit({
-      name: invitation.guestName,
+      name: guestName,
       attending,
       guestCount: attending === 'yes' ? guestCount : undefined,
       message: rsvpMessage.trim() || undefined,
@@ -557,7 +563,7 @@ export function Invitation({ introActive = false }: { introActive?: boolean }) {
                         disabled
                         readOnly
                         placeholder="Enter your name"
-                        value={invitation.guestName}
+                        value={guestName}
                         className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-base text-gray-800 placeholder:text-gray-400 transition-shadow focus:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-900 sm:text-sm"
                       />
                     </div>
