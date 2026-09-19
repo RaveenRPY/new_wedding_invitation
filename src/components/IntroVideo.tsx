@@ -5,6 +5,7 @@ export const INTRO_CROSSFADE_MS = 800
 type Props = {
   onRevealStart?: () => void
   onComplete: () => void
+  onUserGesture?: () => void
 }
 
 function fadeMediaVolume(
@@ -33,7 +34,7 @@ function fadeMediaVolume(
   return () => cancelAnimationFrame(raf)
 }
 
-export function IntroVideo({ onRevealStart, onComplete }: Props) {
+export function IntroVideo({ onRevealStart, onComplete, onUserGesture }: Props) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [exiting, setExiting] = useState(false)
   const doneRef = useRef(false)
@@ -117,7 +118,7 @@ export function IntroVideo({ onRevealStart, onComplete }: Props) {
       <video
         ref={videoRef}
         className="absolute inset-0 h-full w-full object-cover"
-        src="/videos/intro.webm"
+        src="/videos/intro new.webm"
         playsInline
         preload="auto"
       />
@@ -133,7 +134,10 @@ export function IntroVideo({ onRevealStart, onComplete }: Props) {
 
       <button
         type="button"
-        onClick={finish}
+        onClick={() => {
+          onUserGesture?.()
+          finish()
+        }}
         disabled={exiting}
         className="btn-press absolute top-5 right-5 z-10 rounded-full px-5 py-2 text-[12px] uppercase tracking-[0.16em] transition-all active:scale-95 disabled:opacity-50 md:top-8 md:right-8"
         style={{

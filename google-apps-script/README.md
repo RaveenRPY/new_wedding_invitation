@@ -2,17 +2,14 @@
 #
 # 1. Open your spreadsheet
 # 2. Extensions → Apps Script
-# 3. Paste contents of google-apps-script/Code.gs and Save
-# 4. Deploy → New deployment → Type: Web app
-#      Execute as: Me
-#      Who has access: Anyone
-# 5. Copy the Web app URL
-# 6. Local: put it in .env as VITE_GOOGLE_SCRIPT_URL=...
-#    Vercel: Project → Settings → Environment Variables → same name
-# 7. Redeploy the site
+# 3. Delete old code and paste the FULL contents of Code.gs → Save
+# 4. Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy
+#    (First time: Deploy → New deployment → Web app
+#       Execute as: Me | Who has access: Anyone)
+# 5. Copy the Web app URL into Vercel as VITE_GOOGLE_SCRIPT_URL and redeploy
 #
 # Attendances sheet columns: No | Name | Attendance (Yes/No) | Count | Note
 # Wishes sheet columns:      Name | Wish
 #
-# Attendance is looked up / updated by guest Name (case-insensitive).
-# Redeploy the Apps Script web app after changing Code.gs.
+# Re-RSVP for the same guest Name UPDATES that row (does not add a new one).
+# If duplicate rows already exist for a name, the next update keeps one and removes the extras.

@@ -1,13 +1,14 @@
 /**
- * Paste this into: Google Sheet → Extensions → Apps Script
- * Then: Deploy → New deployment → Web app
- *   Execute as: Me
- *   Who has access: Anyone
- * Copy the Web app URL into Vercel as VITE_GOOGLE_SCRIPT_URL
+ * Paste this ENTIRE file into: Google Sheet → Extensions → Apps Script
+ * Then: Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy
  *
- * Spreadsheet tabs expected:
+ * Attendance rows are UPDATED by Name when the guest RSVPs again (not duplicated).
+ *
+ * Tabs expected:
  *   Attendances — No | Name | Attendance | Count | Note
  *   Wishes      — Name | Wish
+ *
+ * Note: getRange(row, column, numRows, numColumns) uses SIZE, not end row/column.
  */
 
 const SPREADSHEET_ID = '1Rb9J09PSdAUX-Fl7nj0oXOYFqYZuWIAWGGQikFchUQQ'
@@ -34,8 +35,8 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents)
     if (data.type === 'attendance') {
-      upsertAttendance_(data)
-      return json_({ ok: true })
+      const result = upsertAttendance_(data)
+      return json_({ ok: true, action: result.action })
     }
     if (data.type === 'wish') {
       appendWish_(data)
@@ -49,6 +50,8 @@ function doPost(e) {
 
 function normalizeName_(name) {
   return String(name || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
     .trim()
     .replace(/\s+/g, ' ')
     .toLowerCase()
@@ -69,42 +72,78 @@ function attendanceFromRow_(row) {
   }
 }
 
-function findAttendanceRow_(name) {
+/** Returns all matching row numbers (1-based), oldest first. */
+function findAttendanceRowNumbers_(name) {
   const sheet = getSheet_(ATTENDANCES_SHEET)
   const lastRow = sheet.getLastRow()
-  if (lastRow < 2) return null
+  if (lastRow < 2) return []
   const target = normalizeName_(name)
-  if (!target) return null
-  const values = sheet.getRange(2, 1, lastRow, 5).getValues()
-  for (var i = 0; i < values.length; i++) {
-    if (normalizeName_(values[i][1]) === target) {
-      return { row: i + 2, data: attendanceFromRow_(values[i]) }
+  if (!target) return []
+
+  const numRows = lastRow - 1
+  const names = sheet.getRange(2, 2, numRows, 1).getDisplayValues()
+  const rows = []
+  for (var i = 0; i < names.length; i++) {
+    if (normalizeName_(names[i][0]) === target) {
+      rows.push(i + 2)
     }
   }
-  return null
+  return rows
 }
 
 function findAttendance_(name) {
-  const found = findAttendanceRow_(name)
-  return found ? found.data : null
+  const rows = findAttendanceRowNumbers_(name)
+  if (!rows.length) return null
+  const sheet = getSheet_(ATTENDANCES_SHEET)
+  const row = rows[rows.length - 1]
+  const values = sheet.getRange(row, 1, 1, 5).getDisplayValues()[0]
+  return attendanceFromRow_(values)
+}
+
+function nextAttendanceNo_(sheet) {
+  const lastRow = sheet.getLastRow()
+  if (lastRow < 2) return 1
+  const numRows = lastRow - 1
+  const nos = sheet.getRange(2, 1, numRows, 1).getValues()
+  var max = 0
+  for (var i = 0; i < nos.length; i++) {
+    var n = Number(nos[i][0])
+    if (!isNaN(n) && n > max) max = n
+  }
+  return max + 1
 }
 
 function upsertAttendance_(data) {
-  const sheet = getSheet_(ATTENDANCES_SHEET)
-  const attendance = data.attending === 'yes' ? 'Yes' : 'No'
-  const count = data.attending === 'yes' ? Number(data.guestCount) || 1 : 0
-  const note = data.message || ''
-  const name = data.name || ''
-  const found = findAttendanceRow_(name)
+  const lock = LockService.getScriptLock()
+  lock.waitLock(15000)
 
-  if (found) {
-    sheet.getRange(found.row, 2, found.row, 5).setValues([[name, attendance, count, note]])
-    return
+  try {
+    const sheet = getSheet_(ATTENDANCES_SHEET)
+    const attendance = data.attending === 'yes' ? 'Yes' : 'No'
+    const count = data.attending === 'yes' ? Number(data.guestCount) || 1 : 0
+    const note = data.message || ''
+    const name = String(data.name || '').trim()
+    const rows = findAttendanceRowNumbers_(name)
+
+    if (rows.length > 0) {
+      const keepRow = rows[0]
+      // 1 row × 4 columns (Name, Attendance, Count, Note)
+      sheet.getRange(keepRow, 2, 1, 4).setValues([[name, attendance, count, note]])
+      SpreadsheetApp.flush()
+
+      for (var i = rows.length - 1; i >= 1; i--) {
+        sheet.deleteRow(rows[i])
+      }
+      return { action: 'updated' }
+    }
+
+    const nextNo = nextAttendanceNo_(sheet)
+    sheet.appendRow([nextNo, name, attendance, count, note])
+    SpreadsheetApp.flush()
+    return { action: 'created' }
+  } finally {
+    lock.releaseLock()
   }
-
-  const lastRow = Math.max(1, sheet.getLastRow())
-  const nextNo = lastRow
-  sheet.appendRow([nextNo, name, attendance, count, note])
 }
 
 function appendWish_(data) {
@@ -116,7 +155,8 @@ function readWishes_() {
   const sheet = getSheet_(WISHES_SHEET)
   const lastRow = sheet.getLastRow()
   if (lastRow < 2) return []
-  const values = sheet.getRange(2, 1, lastRow, 2).getValues()
+  const numRows = lastRow - 1
+  const values = sheet.getRange(2, 1, numRows, 2).getDisplayValues()
   return values
     .filter(function (row) {
       return String(row[0]).trim() || String(row[1]).trim()
@@ -132,9 +172,14 @@ function readWishes_() {
     .reverse()
 }
 
+function getSpreadsheet_() {
+  var active = SpreadsheetApp.getActiveSpreadsheet()
+  if (active) return active
+  return SpreadsheetApp.openById(SPREADSHEET_ID)
+}
+
 function getSheet_(name) {
-  const ss = SpreadsheetApp.openById(SPREADSHEET_ID)
-  const sheet = ss.getSheetByName(name)
+  const sheet = getSpreadsheet_().getSheetByName(name)
   if (!sheet) throw new Error('Missing sheet: ' + name)
   return sheet
 }

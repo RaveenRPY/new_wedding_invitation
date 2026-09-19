@@ -8,7 +8,7 @@ export const invitation = {
   brideFull: 'Sayuri Silva',
   groomParents: {
     label: 'Mr. & Mrs.',
-    names: ['Kapila Thabrew', 'Chithra De Zoysa'],
+    names: ['Kapila Thabrew', 'Chithrani De Zoysa'],
   },
   brideParents: {
     label: 'Mr. & Mrs.',
@@ -23,7 +23,9 @@ export const invitation = {
   dayNumber: '02',
   monthLabel: 'NOVEMBER',
   yearLabel: '2026',
-  venue: 'The Grand  Navro Hotel Matara',
+  venue: 'The Grand Navro Hotel Matara',
+  venueTitle: 'The Grand Navro Hotel',
+  venueCity: 'Matara',
   schedule: [
     { time: '9:00 AM', title: 'Welcome', icon: '/assets/church.webp', iconClass: 'h-[47px] w-[46px]' },
     { time: '11:24 AM', title: 'Poruwa ceremony', icon: '/assets/cake.webp', iconClass: 'h-[50px] w-[33px]' },

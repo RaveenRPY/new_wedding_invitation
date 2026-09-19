@@ -757,16 +757,43 @@ export function Invitation({
         <Reveal as="section" className="relative z-10 flex w-full flex-col items-center px-6 pb-8 pt-8" delay={60}>
           <div className="relative text-center">
             <h3
-              className="text-center uppercase"
-              style={{ color: '#00224c', fontFamily: '"Times New Roman", serif', fontWeight: 700, letterSpacing: '0.03em' }}
+              className="text-center text-[11px] uppercase tracking-[0.2em] md:text-[12px]"
+              style={{ color: 'rgba(0, 34, 76, 0.55)', fontFamily: '"Times New Roman", serif', fontWeight: 700 }}
             >
               Wedding Reception Venue
             </h3>
-            <div
-              className="mx-auto mt-2 max-w-[250px] whitespace-pre-line text-center text-[12px] leading-relaxed md:max-w-[440px] md:text-[14px]"
-              style={{ color: 'rgba(1, 47, 83, 0.72)', fontFamily: 'Baskerville, "Times New Roman", serif' }}
-            >
-              {invitation.venue}
+            <div className="mx-auto mt-3 flex max-w-[320px] flex-col items-center md:max-w-[480px]">
+              <span
+                className="mb-3 h-px w-10"
+                style={{ background: 'linear-gradient(to right, transparent, rgba(0,34,76,0.45), transparent)' }}
+                aria-hidden
+              />
+              <p
+                className="text-center text-[22px] leading-snug md:text-[28px]"
+                style={{
+                  color: '#00224c',
+                  fontFamily: 'Baskerville, "Times New Roman", serif',
+                  fontWeight: 700,
+                  letterSpacing: '0.01em',
+                }}
+              >
+                {invitation.venueTitle}
+              </p>
+              <p
+                className="mt-1.5 text-center text-[13px] uppercase tracking-[0.22em] md:text-[14px]"
+                style={{
+                  color: 'rgba(0, 34, 76, 0.7)',
+                  fontFamily: '"Times New Roman", serif',
+                  fontWeight: 600,
+                }}
+              >
+                {invitation.venueCity}
+              </p>
+              <span
+                className="mt-3 h-px w-10"
+                style={{ background: 'linear-gradient(to right, transparent, rgba(0,34,76,0.45), transparent)' }}
+                aria-hidden
+              />
             </div>
           </div>
           <div className="relative flex w-full flex-col items-center gap-4 md:gap-5">
@@ -924,7 +951,7 @@ export function Invitation({
             duration="5.8s"
             flip
           />
-          <div className="relative overflow-hidden rounded-[18px] bg-white px-4 py-8 shadow-[4px_4px_10px_rgba(0,0,0,0.25)]">
+          <div className="relative overflow-hidden rounded-[18px] bg-white px-4 py-8 shadow-[4px_4px_10px_rgba(0,0,0,0.25)] sm:px-10 md:px-15">
             <div className="text-center">
               <h2
                 className="text-[20px] font-bold uppercase md:text-[24px]"

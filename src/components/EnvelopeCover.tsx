@@ -276,7 +276,7 @@ export function EnvelopeCover({ onOpen, onOpenStart, guestName = invitation.gues
           <video
             ref={bgVideoRef}
             className="h-full w-full object-cover"
-            src="/videos/intro.webm"
+            src="/videos/intro new.webm"
             autoPlay
             muted
             loop
