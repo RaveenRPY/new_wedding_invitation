@@ -1,5 +1,5 @@
 export const invitation = {
-  guestName: 'Hubby',
+  guestName: 'Guest',
   greeting: 'Cordially Invites',
   tagline: 'to celebrate with our family',
   groomFirst: 'Dilesh',

@@ -4,7 +4,7 @@ A faithful clone of the [Chung Đôi invitation](https://chungdoi.com/i/lakruwan
 
 ## Features
 
-- Envelope cover with personalized guest name (**Hubby**)
+- Envelope cover with personalized guest name (**Guest**)
 - Floating polaroid envelope hero with couple photos
 - Ceremony & reception info cards
 - Live countdown + November 2026 calendar (heart on the 2nd)

@@ -1,7 +1,7 @@
 import { isAdminPath } from './adminPath'
 
 /** Read personalized guest name from the URL.
- *  Examples: `?to=Hubby`  ·  `?to=Mr.%20%26%20Mrs.%20Silva`  ·  `/hubby`
+ *  Examples: `?to=Guest`  ·  `?to=Mr.%20%26%20Mrs.%20Silva`  ·  `/aunt-nimal`
  */
 export function guestNameFromUrl(fallback: string): string {
   const params = new URLSearchParams(window.location.search)
