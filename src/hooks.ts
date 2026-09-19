@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Wish } from './data'
 import {
+  fetchAttendance,
   fetchWishesFromSheet,
   sheetsConfigured,
   submitAttendance,
@@ -26,6 +27,45 @@ export function useCountdown(target: Date) {
 
 const WISHES_KEY = 'dilesh-sayuri-wishes'
 const RSVP_KEY = 'dilesh-sayuri-rsvp'
+
+function rsvpStorageKey(guestName: string) {
+  return `${RSVP_KEY}:${guestName.trim().toLowerCase()}`
+}
+
+function readLocalRsvp(guestName: string): RsvpPayload | null {
+  try {
+    const raw = localStorage.getItem(rsvpStorageKey(guestName))
+    if (!raw) {
+      // Migrate legacy single-guest cache if name matches current guest
+      const legacyFlag = localStorage.getItem(RSVP_KEY)
+      const legacyData = localStorage.getItem(`${RSVP_KEY}-data`)
+      if (legacyFlag === '1' && legacyData) {
+        const parsed = JSON.parse(legacyData) as RsvpPayload & { name?: string }
+        if (
+          !parsed.name ||
+          parsed.name.trim().toLowerCase() === guestName.trim().toLowerCase()
+        ) {
+          return {
+            name: guestName,
+            attending: parsed.attending,
+            guestCount: parsed.guestCount,
+            message: parsed.message,
+          }
+        }
+      }
+      return null
+    }
+    return JSON.parse(raw) as RsvpPayload
+  } catch {
+    return null
+  }
+}
+
+function writeLocalRsvp(payload: RsvpPayload) {
+  localStorage.setItem(rsvpStorageKey(payload.name), JSON.stringify(payload))
+  localStorage.setItem(RSVP_KEY, '1')
+  localStorage.setItem(`${RSVP_KEY}-data`, JSON.stringify({ ...payload, at: Date.now() }))
+}
 
 function readLocalWishes(): Wish[] {
   try {
@@ -93,21 +133,62 @@ export type RsvpPayload = {
   message?: string
 }
 
-export function useRsvp() {
-  const [submitted, setSubmitted] = useState(() => localStorage.getItem(RSVP_KEY) === '1')
+export function useRsvp(guestName: string) {
+  const [existing, setExisting] = useState<RsvpPayload | null>(() => readLocalRsvp(guestName))
+  const [loading, setLoading] = useState(() => sheetsConfigured())
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [justSaved, setJustSaved] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setJustSaved(false)
+
+    async function load() {
+      setLoading(true)
+      try {
+        if (sheetsConfigured()) {
+          const remote = await fetchAttendance(guestName)
+          if (cancelled) return
+          if (remote) {
+            const normalized: RsvpPayload = {
+              name: guestName,
+              attending: remote.attending,
+              guestCount: remote.guestCount,
+              message: remote.message,
+            }
+            setExisting(normalized)
+            writeLocalRsvp(normalized)
+            return
+          }
+        }
+        if (!cancelled) {
+          setExisting(readLocalRsvp(guestName))
+        }
+      } catch {
+        if (!cancelled) setExisting(readLocalRsvp(guestName))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [guestName])
 
   const submit = async (payload: RsvpPayload) => {
     setError(null)
     setSubmitting(true)
+    setJustSaved(false)
     try {
       if (sheetsConfigured()) {
         await submitAttendance(payload)
       }
-      localStorage.setItem(`${RSVP_KEY}-data`, JSON.stringify({ ...payload, at: Date.now() }))
-      localStorage.setItem(RSVP_KEY, '1')
-      setSubmitted(true)
+      writeLocalRsvp(payload)
+      setExisting(payload)
+      setJustSaved(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save RSVP')
       throw err
@@ -116,5 +197,13 @@ export function useRsvp() {
     }
   }
 
-  return { submitted, submit, submitting, error }
+  return {
+    existing,
+    hasRsvp: Boolean(existing),
+    loading,
+    submit,
+    submitting,
+    error,
+    justSaved,
+  }
 }

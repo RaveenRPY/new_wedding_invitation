@@ -11,5 +11,8 @@
 #    Vercel: Project → Settings → Environment Variables → same name
 # 7. Redeploy the site
 #
-# Attendances sheet columns: No | Name | Attendance | Count | Note
+# Attendances sheet columns: No | Name | Attendance (Yes/No) | Count | Note
 # Wishes sheet columns:      Name | Wish
+#
+# Attendance is looked up / updated by guest Name (case-insensitive).
+# Redeploy the Apps Script web app after changing Code.gs.

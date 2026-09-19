@@ -109,7 +109,15 @@ export function Invitation({
 }) {
   const countdown = useCountdown(invitation.weddingDate)
   const { wishes, addWish, submitting: wishSubmitting, error: wishError } = useWishes()
-  const { submitted, submit, submitting: rsvpSubmitting, error: rsvpError } = useRsvp()
+  const {
+    existing,
+    hasRsvp,
+    loading: rsvpLoading,
+    submit,
+    submitting: rsvpSubmitting,
+    error: rsvpError,
+    justSaved,
+  } = useRsvp(guestName)
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null)
   const [guestCount, setGuestCount] = useState(1)
   const [rsvpMessage, setRsvpMessage] = useState('')
@@ -121,6 +129,13 @@ export function Invitation({
     }
     return false
   })
+
+  useEffect(() => {
+    if (!existing) return
+    setAttending(existing.attending)
+    setGuestCount(existing.guestCount ?? 1)
+    setRsvpMessage(existing.message ?? '')
+  }, [existing])
 
   useEffect(() => {
     if (!introActive) {
@@ -138,7 +153,7 @@ export function Invitation({
 
   const onRsvp = async (e: FormEvent) => {
     e.preventDefault()
-    if (!attending || submitted || rsvpSubmitting) return
+    if (!attending || rsvpSubmitting) return
     try {
       await submit({
         name: guestName,
@@ -559,12 +574,27 @@ export function Invitation({
                 <div className="mb-6 text-sm text-gray-500">
                   Your presence would be an honor. Please RSVP so we can prepare the warmest welcome for you.
                 </div>
-                {submitted ? (
-                  <p className="rounded-2xl bg-[#00224c]/5 px-4 py-6 text-center text-sm text-[#00224c]">
-                    Thank you! Your RSVP has been recorded.
+                {rsvpLoading ? (
+                  <p className="rounded-2xl bg-[#00224c]/5 px-4 py-6 text-center text-sm text-[#00224c]/70">
+                    Checking your RSVP…
                   </p>
                 ) : (
                   <form className="space-y-4" onSubmit={onRsvp}>
+                    {hasRsvp && (
+                      <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-800">
+                        {justSaved
+                          ? 'Saved! You can update your RSVP anytime.'
+                          : existing?.attending === 'yes'
+                            ? `You're marked as attending${existing.guestCount ? ` (${existing.guestCount} guest${existing.guestCount > 1 ? 's' : ''})` : ''}. You can change this below.`
+                            : "You're marked as not attending. You can change this below."}
+                      </p>
+                    )}
+                    {!hasRsvp && justSaved && (
+                      <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-800">
+                        Thank you! Your RSVP has been recorded.
+                      </p>
+                    )}
+
                     <div>
                       <label className="mb-1.5 block text-sm font-medium text-gray-700">Your name</label>
                       <input
@@ -719,7 +749,7 @@ export function Invitation({
                         boxShadow: 'rgba(0,0,0,0.2) 0 4px 12px -2px',
                       }}
                     >
-                      {rsvpSubmitting ? 'Saving…' : 'Confirm'}
+                      {rsvpSubmitting ? 'Saving…' : hasRsvp ? 'Update RSVP' : 'Confirm'}
                     </button>
                   </form>
                 )}

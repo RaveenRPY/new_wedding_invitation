@@ -68,3 +68,20 @@ export async function fetchWishesFromSheet(): Promise<Wish[]> {
   if (!data.ok) throw new Error(data.error || 'Failed to load wishes')
   return data.wishes ?? []
 }
+
+export async function fetchAttendance(name: string): Promise<RsvpPayload | null> {
+  if (!SCRIPT_URL?.trim() || !name.trim()) return null
+
+  const url = new URL(SCRIPT_URL)
+  url.searchParams.set('action', 'attendance')
+  url.searchParams.set('name', name.trim())
+
+  const res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' })
+  const data = (await res.json()) as {
+    ok?: boolean
+    attendance?: RsvpPayload | null
+    error?: string
+  }
+  if (!data.ok) throw new Error(data.error || 'Failed to load attendance')
+  return data.attendance ?? null
+}
