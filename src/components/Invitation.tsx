@@ -583,15 +583,10 @@ export function Invitation({
                     {hasRsvp && (
                       <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-800">
                         {justSaved
-                          ? 'Saved! You can update your RSVP anytime.'
+                          ? 'Updated successfully. You can change your attendance or guest count anytime.'
                           : existing?.attending === 'yes'
-                            ? `You're marked as attending${existing.guestCount ? ` (${existing.guestCount} guest${existing.guestCount > 1 ? 's' : ''})` : ''}. You can change this below.`
-                            : "You're marked as not attending. You can change this below."}
-                      </p>
-                    )}
-                    {!hasRsvp && justSaved && (
-                      <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-800">
-                        Thank you! Your RSVP has been recorded.
+                            ? `Current status: Attending (${existing.guestCount ?? 1} guest${(existing.guestCount ?? 1) > 1 ? 's' : ''}). Change your answer below and tap Update RSVP.`
+                            : 'Current status: Not attending. Change your answer below and tap Update RSVP.'}
                       </p>
                     )}
 
