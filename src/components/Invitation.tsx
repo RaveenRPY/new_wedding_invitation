@@ -108,8 +108,8 @@ export function Invitation({
   guestName?: string
 }) {
   const countdown = useCountdown(invitation.weddingDate)
-  const { wishes, addWish } = useWishes()
-  const { submitted, submit } = useRsvp()
+  const { wishes, addWish, submitting: wishSubmitting, error: wishError } = useWishes()
+  const { submitted, submit, submitting: rsvpSubmitting, error: rsvpError } = useRsvp()
   const [attending, setAttending] = useState<'yes' | 'no' | null>(null)
   const [guestCount, setGuestCount] = useState(1)
   const [rsvpMessage, setRsvpMessage] = useState('')
@@ -136,22 +136,30 @@ export function Invitation({
     return () => window.clearTimeout(id)
   }, [introActive])
 
-  const onRsvp = (e: FormEvent) => {
+  const onRsvp = async (e: FormEvent) => {
     e.preventDefault()
-    if (!attending || submitted) return
-    submit({
-      name: guestName,
-      attending,
-      guestCount: attending === 'yes' ? guestCount : undefined,
-      message: rsvpMessage.trim() || undefined,
-    })
+    if (!attending || submitted || rsvpSubmitting) return
+    try {
+      await submit({
+        name: guestName,
+        attending,
+        guestCount: attending === 'yes' ? guestCount : undefined,
+        message: rsvpMessage.trim() || undefined,
+      })
+    } catch {
+      /* error surfaced via rsvpError */
+    }
   }
 
-  const onWish = (e: FormEvent) => {
+  const onWish = async (e: FormEvent) => {
     e.preventDefault()
-    if (!wishName.trim() || !wishMessage.trim()) return
-    addWish(wishName.trim(), wishMessage.trim())
-    setWishMessage('')
+    if (!wishName.trim() || !wishMessage.trim() || wishSubmitting) return
+    try {
+      await addWish(wishName.trim(), wishMessage.trim())
+      setWishMessage('')
+    } catch {
+      /* error surfaced via wishError */
+    }
   }
 
   const fillSampleWish = () => {
@@ -697,9 +705,13 @@ export function Invitation({
                       </div>
                     )}
 
+                    {rsvpError && (
+                      <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{rsvpError}</p>
+                    )}
+
                     <button
                       type="submit"
-                      disabled={!attending}
+                      disabled={!attending || rsvpSubmitting}
                       className="w-full rounded-2xl py-3.5 text-sm font-semibold transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 disabled:hover:shadow-none disabled:active:scale-100"
                       style={{
                         backgroundColor: '#00224c',
@@ -707,7 +719,7 @@ export function Invitation({
                         boxShadow: 'rgba(0,0,0,0.2) 0 4px 12px -2px',
                       }}
                     >
-                      Confirm
+                      {rsvpSubmitting ? 'Saving…' : 'Confirm'}
                     </button>
                   </form>
                 )}
@@ -929,12 +941,16 @@ export function Invitation({
                 </button>
                 <button
                   type="submit"
-                  className="rounded-full px-6 py-2 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95"
+                  disabled={wishSubmitting}
+                  className="rounded-full px-6 py-2 text-sm font-semibold text-white transition-transform hover:scale-105 active:scale-95 disabled:opacity-50"
                   style={{ backgroundColor: '#00224c', fontFamily: '"Times New Roman", serif' }}
                 >
-                  SEND WISHES
+                  {wishSubmitting ? 'SENDING…' : 'SEND WISHES'}
                 </button>
               </div>
+              {wishError && (
+                <p className="mt-2 text-center text-xs text-red-600">{wishError}</p>
+              )}
             </form>
             <div className="mx-auto mt-8 max-h-[500px] w-full max-w-full space-y-3 overflow-y-auto pr-2 md:max-w-[600px]">
               {wishes.length === 0 ? (
