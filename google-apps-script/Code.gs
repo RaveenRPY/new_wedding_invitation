@@ -8,12 +8,16 @@
  *   Attendances — No | Name | Attendance | Count | Note
  *   Wishes      — Name | Wish
  *
+ * Admin dashboard: /admin  (PIN must match ADMIN_TOKEN below)
+ *
  * Note: getRange(row, column, numRows, numColumns) uses SIZE, not end row/column.
  */
 
 const SPREADSHEET_ID = '1Rb9J09PSdAUX-Fl7nj0oXOYFqYZuWIAWGGQikFchUQQ'
 const ATTENDANCES_SHEET = 'Attendances'
 const WISHES_SHEET = 'Wishes'
+/** PIN for /admin — change this, then redeploy the web app. */
+const ADMIN_TOKEN = 'DS021126'
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'wishes'
@@ -24,6 +28,16 @@ function doGet(e) {
     if (action === 'attendance') {
       const name = (e.parameter && e.parameter.name) || ''
       return json_({ ok: true, attendance: findAttendance_(name) })
+    }
+    if (action === 'admin') {
+      if (!adminAuthorized_(e)) {
+        return json_({ ok: false, error: 'Unauthorized' })
+      }
+      return json_({
+        ok: true,
+        attendances: readAllAttendances_(),
+        wishes: readWishes_(),
+      })
     }
     return json_({ ok: false, error: 'Unknown action' })
   } catch (err) {
@@ -57,6 +71,11 @@ function normalizeName_(name) {
     .toLowerCase()
 }
 
+function adminAuthorized_(e) {
+  const token = String((e && e.parameter && e.parameter.token) || '').trim()
+  return Boolean(token) && token === String(ADMIN_TOKEN).trim()
+}
+
 function attendanceFromRow_(row) {
   const attendanceRaw = String(row[2] || '')
     .trim()
@@ -65,11 +84,24 @@ function attendanceFromRow_(row) {
     attendanceRaw === 'yes' || attendanceRaw === 'attending' ? 'yes' : 'no'
   const count = Number(row[3]) || 0
   return {
+    no: Number(row[0]) || 0,
     name: String(row[1] || ''),
     attending: attending,
     guestCount: attending === 'yes' ? Math.max(1, count || 1) : undefined,
     message: String(row[4] || ''),
   }
+}
+
+function readAllAttendances_() {
+  const sheet = getSheet_(ATTENDANCES_SHEET)
+  const lastRow = sheet.getLastRow()
+  if (lastRow < 2) return []
+  const values = sheet.getRange(2, 1, lastRow - 1, 5).getDisplayValues()
+  return values
+    .filter(function (row) {
+      return String(row[1] || '').trim()
+    })
+    .map(attendanceFromRow_)
 }
 
 /** Returns all matching row numbers (1-based), oldest first. */

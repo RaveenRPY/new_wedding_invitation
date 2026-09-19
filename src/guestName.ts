@@ -1,3 +1,5 @@
+import { isAdminPath } from './adminPath'
+
 /** Read personalized guest name from the URL.
  *  Examples: `?to=Hubby`  ·  `?to=Mr.%20%26%20Mrs.%20Silva`  ·  `/hubby`
  */
@@ -7,6 +9,8 @@ export function guestNameFromUrl(fallback: string): string {
   if (fromQuery?.trim()) {
     return decodeURIComponent(fromQuery.trim().replace(/\+/g, ' ')).trim() || fallback
   }
+
+  if (isAdminPath()) return fallback
 
   const segment = window.location.pathname.split('/').filter(Boolean).pop()
   if (!segment || segment === 'index.html') return fallback

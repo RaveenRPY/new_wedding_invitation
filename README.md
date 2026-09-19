@@ -23,6 +23,9 @@ npm run dev
 
 Open http://127.0.0.1:5173/
 
+Admin dashboard (groom & bride): http://127.0.0.1:5173/admin  
+PIN is `ADMIN_TOKEN` in `google-apps-script/Code.gs`. After changing the script, deploy a new Apps Script version.
+
 ## Customize
 
 Edit invitation copy, dates, venue, and asset paths in `src/data.ts`.

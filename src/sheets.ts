@@ -3,6 +3,19 @@ import type { RsvpPayload } from './hooks'
 
 const SCRIPT_URL = import.meta.env.VITE_GOOGLE_SCRIPT_URL as string | undefined
 
+export type AttendanceRow = {
+  no: number
+  name: string
+  attending: 'yes' | 'no'
+  guestCount?: number
+  message?: string
+}
+
+export type AdminDashboardData = {
+  attendances: AttendanceRow[]
+  wishes: Wish[]
+}
+
 export function sheetsConfigured() {
   return Boolean(SCRIPT_URL?.trim())
 }
@@ -84,4 +97,35 @@ export async function fetchAttendance(name: string): Promise<RsvpPayload | null>
   }
   if (!data.ok) throw new Error(data.error || 'Failed to load attendance')
   return data.attendance ?? null
+}
+
+export async function fetchAdminDashboard(token: string): Promise<AdminDashboardData> {
+  if (!SCRIPT_URL?.trim()) {
+    throw new Error('Google Sheet is not configured (missing VITE_GOOGLE_SCRIPT_URL)')
+  }
+
+  const url = new URL(SCRIPT_URL)
+  url.searchParams.set('action', 'admin')
+  url.searchParams.set('token', token.trim())
+
+  const res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' })
+  const data = (await res.json()) as {
+    ok?: boolean
+    attendances?: AttendanceRow[]
+    wishes?: Wish[]
+    error?: string
+  }
+
+  if (data.error === 'Unauthorized') throw new Error('Unauthorized')
+  if (data.error === 'Unknown action') {
+    throw new Error(
+      'The sheet script needs a new deploy. Paste the latest google-apps-script/Code.gs and deploy a new version.',
+    )
+  }
+  if (!data.ok) throw new Error(data.error || 'Failed to load dashboard')
+
+  return {
+    attendances: data.attendances ?? [],
+    wishes: data.wishes ?? [],
+  }
 }

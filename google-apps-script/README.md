@@ -13,3 +13,6 @@
 #
 # Re-RSVP for the same guest Name UPDATES that row (does not add a new one).
 # If duplicate rows already exist for a name, the next update keeps one and removes the extras.
+#
+# Admin dashboard: https://YOUR-SITE/admin
+# PIN is ADMIN_TOKEN in Code.gs (default DS021126). Change it, then redeploy.
